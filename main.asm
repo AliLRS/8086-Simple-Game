@@ -27,4 +27,26 @@ clear_screen proc
     ret
 clear_screen endp
 
+scroll_up proc
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov ah, 06      ; arguman for scroll upward
+    mov al, 02      ; number of rows that scrolled up
+    mov bh, 07      ; color
+    mov ch, 01
+    mov cl, 00
+    mov dh, 24
+    mov dl, 79
+    int 10h
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+scroll_up endp
+
 end main
