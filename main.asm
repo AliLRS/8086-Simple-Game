@@ -7,14 +7,27 @@ username db ?
 seed db ?
 cursor_x db 0
 cursor_y db 0
+string db 64 DUP(?)
+itr dw 0
+time db 0
+WhITECOLOR db 0fh
 
 .code
 main proc
     mov ax, @data
     mov ds, ax
 
-    mov ah, 4cH
-    int 21H
+    mov ah, 0
+    mov al, 03h
+    int 10h         ; text mode. 80x25. 16 color.
+
+    call clear_screen
+    ; call print_string
+    mov bx, offset string
+    call get_input
+
+    mov ah, 4ch
+    int 21h
 main endp
 
 clear_screen proc
@@ -68,7 +81,7 @@ set_cursor proc
     ret
 set_cursor endp
 
-print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(INT 10h / AH = 13h - write string.)
+print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(int 10h / ah = 13h - write string.)
     push ax
     push dx
 
@@ -80,5 +93,89 @@ print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(
     pop ax
     ret
 print_string endp
+
+get_input proc
+    mov dx, bx
+    push dx         ; save starting address of the buffer
+    mov itr, 1
+
+    mov ah, 2ch     ; get time 
+    int 21h
+    mov time, dl
+
+check_time:
+    mov ah, 2ch    ; get time to check
+    int 21h
+    cmp time, dl
+    je check_time   ; if time is the same then check again else get the key
+
+    mov time, dl
+            
+get:  
+    mov ah, 01h     ; get the key that is pressed
+    int 16h
+
+    pop dx
+    mov bx, dx      ; get the starting address of the buffer
+    push dx
+    jz check_time   ; if no key is pressed then check time
+
+check:  
+    mov ah, 00h     ; remove the key from the buffer
+    int 16h
+    cmp al, 0dh     ; if enter is pressed
+    je str_end
+    cmp al, 08h     ; if backspace is pressed
+    je backspace
+         
+    ; echo the key
+    push bx         
+    call set_cursor
+    inc cursor_y
+
+    mov ah,09h
+    mov bh, 0       ; Set page number
+    mov bl, WHITECOLOR    ; Set color
+    mov cx, 1       ; Character count
+    int 10h       
+    pop bx
+    
+    mov cx, itr
+    add bx, cx
+    mov [bx], al
+    inc itr
+    jmp check_time
+
+backspace:
+    cmp itr, 1
+    je get
+    dec itr
+    mov al, 20h
+    mov cx, itr
+    add bx, cx
+    mov [bx], al
+    dec cursor_y
+
+    push bx         ; save bx
+    call set_cursor
+    mov ah,09h
+    mov bh, 0       ; Set page number
+    mov bl, WhITECOLOR    ; Set color
+    mov cx, 1       ; Character count
+    int 10h
+    pop bx
+
+    jmp get
+
+str_end:
+    mov cx, itr    
+    dec cx          ; length of the string
+    mov [bx], cl    ; store the length of the string
+;   inc cx
+;   add bx, cx
+;   mov [bx], '$'
+    pop dx
+    ret
+get_input endp
 
 end main
