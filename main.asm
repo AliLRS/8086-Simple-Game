@@ -5,6 +5,8 @@
 score db 0
 username db ?
 seed db ?
+cursor_x db 0
+cursor_y db 0
 
 .code
 main proc
@@ -48,5 +50,22 @@ scroll_up proc
     pop ax
     ret
 scroll_up endp
+
+set_cursor proc
+    push ax
+    push bx
+    push dx
+
+    mov ah, 02          ; arguman for scroll upward
+    mov bh, 00          ; page number
+    mov dh, [cursor_x]  ; row
+    mov dl, [cursor_y]  ; column
+    int 10h
+
+    pop dx
+    pop bx
+    pop ax
+    ret
+set_cursor endp
 
 end main
