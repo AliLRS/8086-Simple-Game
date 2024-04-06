@@ -68,4 +68,17 @@ set_cursor proc
     ret
 set_cursor endp
 
+print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(INT 10h / AH = 13h - write string.)
+    push ax
+    push dx
+
+    mov ah, 09          ; arguman for outputing a string
+    mov dx, offset username ;;;;;;;;;;;;;;;;;;; replace it with a register
+    int 21h
+
+    pop dx
+    pop ax
+    ret
+print_string endp
+
 end main
