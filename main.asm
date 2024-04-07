@@ -11,6 +11,7 @@ string db 64 DUP(?)
 itr dw 0
 time db 0
 WhITECOLOR db 0fh
+BUF1 DB 20, ?, 8 DUP(0FFH)
 
 .code
 main proc
@@ -25,6 +26,7 @@ main proc
     ; call print_string
     mov bx, offset string
     call get_input
+    call get_str
 
     mov ah, 4ch
     int 21h
@@ -177,5 +179,11 @@ str_end:
     pop dx
     ret
 get_input endp
+
+get_str proc
+mov ah, 0ah
+mov dx, offset BUF1
+int 21h
+get_str endp
 
 end main
