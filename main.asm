@@ -1,5 +1,5 @@
 .model small
-.stack 100h
+.stack 1000h
 
 .data
 name_msg db 'Enter your name: '
@@ -73,6 +73,9 @@ main proc
 
     call print_bar
     
+    mov bx, 1234
+    call num_to_str
+
     mov ah, 4ch
     int 21h
 main endp
@@ -330,6 +333,7 @@ print_bar proc
 print_bar endp
 
 num_of_digits proc
+    ; bx is the input number
     push ax
     push cx
     push dx
@@ -377,4 +381,40 @@ while2:
     pop ax
     ret
 str_to_num endp
+
+num_to_str proc
+    ; bx is input number
+    ; output is string variable
+    push ax
+    push cx
+    push dx
+
+    mov ax, bx  ; ax is the number
+    
+while3:
+    mov dx, 0
+    div TEN
+    push dx
+    cmp ax, 0
+    jnz while3
+    
+    call num_of_digits
+    mov cx, bx
+    mov bx, offset string
+
+while4:
+    pop dx
+    add dx, 30h
+    mov [bx], dx
+    inc bx
+    dec cx
+    cmp cx, 0
+    jnz while4
+
+    pop dx
+    pop cx
+    pop ax
+    ret
+num_to_str endp
+
 end main
