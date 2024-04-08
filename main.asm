@@ -3,7 +3,7 @@
 
 .data
 score db 0
-username db ?
+username db 'ali'
 seed db ?
 cursor_x db 0
 cursor_y db 0
@@ -24,9 +24,10 @@ main proc
 
     call clear_screen
     ; call print_string
-    mov bx, offset string
-    call get_input
-    call get_str
+    ; mov bx, offset string
+    ; call get_input
+    ; call get_str
+    call print
 
     mov ah, 4ch
     int 21h
@@ -95,6 +96,31 @@ print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(
     pop ax
     ret
 print_string endp
+
+print proc
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov ax, @data
+    mov es, ax
+    mov al, 1
+	mov bh, 0
+	mov bl, 0fh
+	mov cx, 3 ; calculate message size. 
+	mov dl, [cursor_y]
+	mov dh, [cursor_x]
+	mov bp, offset username
+	mov ah, 13h
+	int 10h
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+print endp
 
 get_input proc
     mov dx, bx
