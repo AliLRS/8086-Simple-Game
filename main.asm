@@ -15,6 +15,7 @@ seed db ?
 cursor_x db 0
 cursor_y db 0
 string db 64 DUP(?)
+number dw ?
 itr dw 0
 time db 0
 WhITECOLOR db 0fh
@@ -23,6 +24,7 @@ GREENCOLOR db 0ah
 REDCOLOR db 0ch
 YELLOWCOLOR db 0eh
 COLOR db ?
+TEN dw 10
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -301,7 +303,7 @@ print_bar proc
 
     ; print score
     ; mov bx, score
-    ; call number_of_digits   ; returns number of digits in bx. bx is argument for print pocedure.
+    ; call num_of_digits   ; returns number of digits in bx. bx is argument for print pocedure.
     ; mov cx, bx  ; message size.
     ; mov bx, offset score
     ; call print
@@ -327,19 +329,19 @@ print_bar proc
     ret
 print_bar endp
 
-number_of_digits proc
+num_of_digits proc
     push ax
     push cx
     push dx
 
     mov cx, 0
     mov ax, bx
-while:
+while1:
     mov dx, 0
     inc cx
-    div word ptr 10  ; Divide ax by 10
+    div [TEN]  ; Divide ax by 10
     cmp ax, 0 ; Compare quotient with zero
-    jnz while ; If quotient != 0 continue counting
+    jnz while1 ; If quotient != 0 continue counting
 
     mov bx, cx ; return number of digits in bx.
 
@@ -347,6 +349,32 @@ while:
     pop cx
     pop ax
     ret
-number_of_digits endp
+num_of_digits endp
 
+str_to_num proc
+    ; bx is offset of string
+    ; cx is size of string
+    ; output is in [number]
+    push ax
+    push dx
+    mov [number], 0
+
+while2:
+    mov ax, [number]
+    mul TEN
+
+    mov dl, [bx]
+    mov dh, 0
+    inc bx          ; goto next character
+    sub dx, 30h     ; convert ascci character to number
+    add ax, dx
+    mov [number], ax
+    dec cx
+    cmp cx, 0
+    jnz while2
+
+    pop dx
+    pop ax
+    ret
+str_to_num endp
 end main
