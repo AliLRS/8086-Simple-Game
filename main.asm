@@ -2,9 +2,15 @@
 .stack 100h
 
 .data
-greeting db 'Enter your name: '
-score db 0
+name_msg db 'Enter your name: '
+seed_msg db 'Enter a number for seed: '
+space_msg db ''
+user_msg db 'User: '
+score_msg db 'Score: '
+dash_msg db 80 DUP('-')
+score dw 0
 username db 64 DUP(?)
+seed_str db 64 DUP(?)
 seed db ?
 cursor_x db 0
 cursor_y db 0
@@ -12,6 +18,12 @@ string db 64 DUP(?)
 itr dw 0
 time db 0
 WhITECOLOR db 0fh
+BLUECOLOR db 0bh
+GREENCOLOR db 0ah
+REDCOLOR db 0ch
+YELLOWCOLOR db 0eh
+COLOR db ?
+
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
 .code
@@ -19,31 +31,46 @@ main proc
     mov ax, @data
     mov ds, ax
 
+    ; set termimnal mode
     mov ah, 0
     mov al, 03h
     int 10h         ; text mode. 80x25. 16 color.
 
     call clear_screen
+    mov al, [WhITECOLOR]
+    mov [COLOR], al
 
-    mov bx, offset greeting
+    ; print input name message
+    mov bx, offset name_msg
     mov cx, 17  ; message size.
     call print
 
+    ; get name
     call set_cursor
-
     mov bx, offset username
     ; call get_str
     call get_input
     
+    ; goto next line
     inc [cursor_x]
     mov [cursor_y], 0
     call set_cursor
     
-    mov bx, offset username + 1
-    mov ch, 0
-    mov cl, [username]  ; message size.
+    ; print input seed message
+    mov bx, offset seed_msg
+    mov cx, 25  ; message size.
     call print
 
+    ; get seed
+    call set_cursor
+    mov bx, offset seed_str
+    ; call get_str
+    call get_input
+
+    call clear_screen
+
+    call print_bar
+    
     mov ah, 4ch
     int 21h
 main endp
@@ -57,6 +84,10 @@ clear_screen proc
     mov dh, 24
     mov dl, 79
     int 10h
+
+    mov [cursor_x], 0
+    mov [cursor_y], 0
+    call set_cursor
     ret
 clear_screen endp
 
@@ -66,7 +97,7 @@ scroll_up proc
     push cx
     push dx
 
-    mov ah, 06      ; arguman for scroll upward
+    mov ah, 06      ; argument for scroll upward
     mov al, 02      ; number of rows that scrolled up
     mov bh, 07      ; color
     mov ch, 01
@@ -87,7 +118,7 @@ set_cursor proc
     push bx
     push dx
 
-    mov ah, 02          ; arguman for scroll upward
+    mov ah, 02          ; argument for scroll upward
     mov bh, 00          ; page number
     mov dh, [cursor_x]  ; row
     mov dl, [cursor_y]  ; column
@@ -103,7 +134,7 @@ print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(
     push ax
     push dx
 
-    mov ah, 09          ; arguman for outputing a string
+    mov ah, 09          ; argument for outputing a string
     ; mov dx, offset username ;;;;;;;;;;;;;;;;;;; replace it with a register
     mov dx, bx
     int 21h
@@ -123,7 +154,7 @@ print proc
     mov es, ax
     mov al, 1
 	mov bh, 0
-	mov bl, [WhITECOLOR] ; color
+	mov bl, [COLOR] ; color
 	; mov cx, 3 ; calculate message size. 
 	mov dl, [cursor_y]
 	mov dh, [cursor_x]
@@ -238,5 +269,84 @@ get_str proc
     pop ax
     ret
 get_str endp
+
+print_bar proc
+    push ax
+    push bx
+    push cx
+    ; push dx
+
+    mov al, [BLUECOLOR]
+    mov [COLOR], al
+    ; print 'user: '
+    mov bx, offset user_msg
+    mov ch, 0
+    mov cl, 6   ; message size.
+    call print
+
+    ; print username
+    mov bx, offset username + 1
+    mov ch, 0
+    mov cl, [username]  ; message size.
+    call print
+
+    mov [cursor_y], 68
+    call set_cursor
+
+    ; print 'score: '
+    mov bx, offset score_msg
+    mov ch, 0
+    mov cl, 7   ; message size.
+    call print
+
+    ; print score
+    ; mov bx, score
+    ; call number_of_digits   ; returns number of digits in bx. bx is argument for print pocedure.
+    ; mov cx, bx  ; message size.
+    ; mov bx, offset score
+    ; call print
+
+    ; goto next line
+    inc [cursor_x]
+    mov [cursor_y], 0
+    call set_cursor
+
+    mov al, [WhITECOLOR]
+    mov [COLOR], al
+
+    ; print a line of dashes
+    mov bx, offset dash_msg
+    mov ch, 0
+    mov cl, 80   ; message size.
+    call print
+
+    ; pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+print_bar endp
+
+number_of_digits proc
+    push ax
+    push cx
+    push dx
+
+    mov cx, 0
+    mov ax, bx
+while:
+    mov dx, 0
+    inc cx
+    div word ptr 10  ; Divide ax by 10
+    cmp ax, 0 ; Compare quotient with zero
+    jnz while ; If quotient != 0 continue counting
+
+    mov bx, cx ; return number of digits in bx.
+
+    pop dx
+    pop cx
+    pop ax
+    ret
+number_of_digits endp
 
 end main
