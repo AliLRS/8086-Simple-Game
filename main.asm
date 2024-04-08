@@ -2,8 +2,9 @@
 .stack 100h
 
 .data
+greeting db 'Enter your name: '
 score db 0
-username db 'ali'
+username db 64 DUP(?)
 seed db ?
 cursor_x db 0
 cursor_y db 0
@@ -23,10 +24,24 @@ main proc
     int 10h         ; text mode. 80x25. 16 color.
 
     call clear_screen
-    ; call print_string
-    ; mov bx, offset string
-    ; call get_input
+
+    mov bx, offset greeting
+    mov cx, 17  ; message size.
+    call print
+
+    call set_cursor
+
+    mov bx, offset username
     ; call get_str
+    call get_input
+    
+    inc [cursor_x]
+    mov [cursor_y], 0
+    call set_cursor
+    
+    mov bx, offset username + 1
+    mov ch, 0
+    mov cl, [username]  ; message size.
     call print
 
     mov ah, 4ch
@@ -89,7 +104,8 @@ print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(
     push dx
 
     mov ah, 09          ; arguman for outputing a string
-    mov dx, offset username ;;;;;;;;;;;;;;;;;;; replace it with a register
+    ; mov dx, offset username ;;;;;;;;;;;;;;;;;;; replace it with a register
+    mov dx, bx
     int 21h
 
     pop dx
@@ -100,23 +116,24 @@ print_string endp
 print proc
     push ax
     push bx
-    push cx
+    ; push cx
     push dx
-
+	mov bp, bx
     mov ax, @data
     mov es, ax
     mov al, 1
 	mov bh, 0
-	mov bl, 0fh
-	mov cx, 3 ; calculate message size. 
+	mov bl, [WhITECOLOR] ; color
+	; mov cx, 3 ; calculate message size. 
 	mov dl, [cursor_y]
 	mov dh, [cursor_x]
-	mov bp, offset username
+	; mov bp, offset username
 	mov ah, 13h
 	int 10h
 
+    add [cursor_y], cl  ; update cursor
     pop dx
-    pop cx
+    ; pop cx
     pop bx
     pop ax
     ret
@@ -198,18 +215,28 @@ backspace:
 str_end:
     mov cx, itr    
     dec cx          ; length of the string
+    pop dx
+    mov bx, dx
     mov [bx], cl    ; store the length of the string
 ;   inc cx
 ;   add bx, cx
 ;   mov [bx], '$'
-    pop dx
+    ; pop dx
     ret
 get_input endp
 
 get_str proc
-mov ah, 0ah
-mov dx, offset BUF1
-int 21h
+    push ax
+    push dx
+
+    mov ah, 0ah
+    ; mov dx, bx  ; bx is offset of input string
+    mov dx, offset BUF1
+    int 21h
+
+    pop dx
+    pop ax
+    ret
 get_str endp
 
 end main
