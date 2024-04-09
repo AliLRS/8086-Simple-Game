@@ -21,6 +21,7 @@ asnwer dw ?
 operator db ?
 equal db '='
 space db ' '
+hashtag db '#'
 itr dw 0
 time db 0
 WhITECOLOR db 0fh
@@ -30,6 +31,8 @@ REDCOLOR db 0ch
 YELLOWCOLOR db 0eh
 COLOR db ?
 TEN dw 10
+clk dw 0
+number_of_hashtags db 0
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -576,6 +579,159 @@ eval_end:
     ret
 evaluate endp
 
+get_answer proc
+    ; bx is the offset of the string
+    mov dx, bx
+    push dx         ; save starting address of the string
+    mov itr, 1
+
+    mov ah, 2ch     ; get time 
+    int 21h
+    mov time, dl
+
+    mov ah, 0       ; get number of clock ticks
+    int 1ah
+    mov clk, dx
+
+
+check_time2:
+    mov ah, 2ch    ; get time to check
+    int 21h
+    cmp time, dl
+    je check_time2   ; if time is the same then check again else get the key
+    
+    mov time, dl
+
+    mov ah, 0       ; get number of clock ticks
+    int 1ah
+    sub dx, clk
+    cmp dx, 4
+    jae update_progress_bar
+
+            
+get2:
+    mov al, number_of_hashtags
+    mov ah, 0
+    cmp ax, 80
+    jae str_end2
+
+    mov ah, 01h     ; get the key that is pressed
+    int 16h
+
+    pop dx
+    mov bx, dx      ; get the starting address of the string
+    push dx
+    jz check_time2   ; if no key is pressed then check time
+
+check2:
+    mov ah, 00h     ; remove the key from the string
+    int 16h
+    cmp al, 0dh     ; if enter is pressed
+    je str_end2
+    cmp al, 08h     ; if backspace is pressed
+    je backspace2
+         
+    ; echo the key
+    push bx         
+    call set_cursor
+    inc cursor_y
+
+    mov ah,09h
+    mov bh, 0       ; Set page number
+    mov bl, WHITECOLOR    ; Set color
+    mov cx, 1       ; Character count
+    int 10h       
+    pop bx
+    
+    mov cx, itr
+    add bx, cx
+    mov [bx], al
+    inc itr
+    jmp check_time2
+
+backspace2:
+    cmp itr, 1
+    je get2
+    dec itr
+    mov al, 20h
+    mov cx, itr
+    add bx, cx
+    mov [bx], al
+    dec cursor_y
+
+    push bx         ; save bx
+    call set_cursor
+    mov ah,09h
+    mov bh, 0       ; Set page number
+    mov bl, WhITECOLOR    ; Set color
+    mov cx, 1       ; Character count
+    int 10h
+    pop bx
+
+    jmp get2
+
+update_progress_bar:
+    mov al, [cursor_y]
+    push ax
+    mov al, number_of_hashtags
+    mov ah, 0
+    mov [cursor_y], al
+    inc [cursor_x]
+    call set_cursor
+
+    inc number_of_hashtags
+    cmp number_of_hashtags, 27
+    ja yellow_progress_bar
+    cmp number_of_hashtags, 54
+    ja red_progress_bar
+    cmp number_of_hashtags, 80
+    ja end_progress_bar
+    jmp green_progress_bar
+
+green_progress_bar:
+    mov al, [GREENCOLOR]
+    mov [COLOR], al
+    mov bx, offset hashtag
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+    jmp end_progress_bar
+
+yellow_progress_bar:
+    mov al, [YELLOWCOLOR]
+    mov [COLOR], al
+    mov bx, offset hashtag
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+    jmp end_progress_bar
+
+red_progress_bar:
+    mov al, [REDCOLOR]
+    mov [COLOR], al
+    mov bx, offset hashtag
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+    jmp end_progress_bar
+
+end_progress_bar:
+    pop ax
+    mov [cursor_y], al
+    dec [cursor_x]
+    call set_cursor
+    add [clk], 4
+    jmp get2
+
+str_end2:
+    mov cx, itr    
+    dec cx          ; length of the string
+    pop dx
+    mov bx, dx
+    mov [bx], cl    ; store the length of the string
+    ret
+get_answer endp
+
 check_answer proc
     ; [asnwer] is input
     ; output is in [number]
@@ -586,7 +742,9 @@ check_answer proc
 
     ; get input and save to string variable
     mov bx, offset string
-    call get_input
+    call get_answer
+    cmp itr, 1
+    je no_asnwer
 
     ; convert string to number
     mov bx, offset string + 1
