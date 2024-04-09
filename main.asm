@@ -11,7 +11,7 @@ dash_msg db 80 DUP('-')
 score dw 0
 username db 64 DUP(?)
 seed_str db 64 DUP(?)
-seed db ?
+seed dw ?
 cursor_x db 0
 cursor_y db 0
 string db 64 DUP(?)
@@ -42,32 +42,7 @@ main proc
     mov al, [WhITECOLOR]
     mov [COLOR], al
 
-    ; print input name message
-    mov bx, offset name_msg
-    mov cx, 17  ; message size.
-    call print
-
-    ; get name
-    call set_cursor
-    mov bx, offset username
-    ; call get_str
-    call get_input
-    
-    ; goto next line
-    inc [cursor_x]
-    mov [cursor_y], 0
-    call set_cursor
-    
-    ; print input seed message
-    mov bx, offset seed_msg
-    mov cx, 25  ; message size.
-    call print
-
-    ; get seed
-    call set_cursor
-    mov bx, offset seed_str
-    ; call get_str
-    call get_input
+    call get_info
 
     call clear_screen
 
@@ -275,6 +250,44 @@ get_str proc
     ret
 get_str endp
 
+get_info proc
+    ; print input name message
+    mov bx, offset name_msg
+    mov cx, 17  ; message size.
+    call print
+
+    ; get name
+    call set_cursor
+    mov bx, offset username
+    ; call get_str
+    call get_input
+    
+    ; goto next line
+    inc [cursor_x]
+    mov [cursor_y], 0
+    call set_cursor
+    
+    ; print input seed message
+    mov bx, offset seed_msg
+    mov cx, 25  ; message size.
+    call print
+
+    ; get seed
+    call set_cursor
+    mov bx, offset seed_str
+    ; call get_str
+    call get_input
+
+    ; convert seed string to number
+    mov bx, offset seed_str + 1
+    mov ch, 0
+    mov cl, [seed_str]  ; message size.
+    call str_to_num
+    mov bx, [number]
+    mov [seed], bx
+    ret
+get_info endp
+
 print_bar proc
     push ax
     push bx
@@ -402,7 +415,7 @@ while3:
     call num_of_digits
     mov cx, bx
     mov bx, offset string
-    mov [bx], cl
+    mov [bx], cl    ; store the length of the string
     inc bx
 
 while4:
@@ -419,5 +432,37 @@ while4:
     pop ax
     ret
 num_to_str endp
+
+random_number proc
+    ; [seed] is input
+    ; output is in [number]
+    push ax
+    push bx
+    push cx
+    push dx
+    
+    mov ax, seed   
+    mov cx, 11021d  ; Multiplier
+    mov dx, 2213d   ; Increment
+    mov bx, 5000h   ; Modulus	
+
+    ; random number using LCG algorithm
+    mul cx          ; ax = ax * cx
+    add ax, dx      ; ax = ax + dx
+    mov dx, 0
+    div bx          ; (remainder is the random number) dx between 0 and 7fff
+    mov seed, dx
+    mov ax, dx
+    mov bx, 9999d	; cause i want random num between 0-9999
+    mov dx, 0	 
+    div bx		    ; cause i want random num between 0-9999
+    mov number, dx
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+random_number endp
 
 end main
