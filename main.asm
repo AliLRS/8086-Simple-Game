@@ -17,6 +17,7 @@ string db 64 DUP(?)
 number dw ?
 left dw ?
 right dw ?
+asnwer dw ?
 operator db ?
 equal db '='
 space db ' '
@@ -56,6 +57,10 @@ main proc
     call set_cursor
 
     call print_question
+
+    call evaluate
+
+    call check_answer
 
     mov ah, 4ch
     int 21h
@@ -157,8 +162,9 @@ print proc
 print endp
 
 get_input proc
+    ; bx is the offset of the string
     mov dx, bx
-    push dx         ; save starting address of the buffer
+    push dx         ; save starting address of the string
     mov itr, 1
 
     mov ah, 2ch     ; get time 
@@ -178,12 +184,12 @@ get:
     int 16h
 
     pop dx
-    mov bx, dx      ; get the starting address of the buffer
+    mov bx, dx      ; get the starting address of the string
     push dx
     jz check_time   ; if no key is pressed then check time
 
 check:  
-    mov ah, 00h     ; remove the key from the buffer
+    mov ah, 00h     ; remove the key from the string
     int 16h
     cmp al, 0dh     ; if enter is pressed
     je str_end
@@ -492,7 +498,7 @@ print_question proc
     cmp dx, 0
     jnz add
     mov operator, '-'
-    
+
     ; left should be greater than right
     mov ax, [left]
     cmp ax, [right]
@@ -540,5 +546,121 @@ print_end:
     pop ax
     ret
 print_question endp
+
+evaluate proc
+    ; [left], [right], [operator] are inputs
+    ; output is in [number]
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov ax, [left]
+    mov bx, [right]
+    mov dl, [operator]
+    cmp dl, '+'
+    jnz sub_operation
+    add ax, bx
+    mov asnwer, ax
+    jmp eval_end
+
+sub_operation:
+    sub ax, bx
+    mov asnwer, ax
+
+eval_end:
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+evaluate endp
+
+check_answer proc
+    ; [asnwer] is input
+    ; output is in [number]
+    push ax
+    push bx
+    push cx
+    push dx
+
+    ; get input and save to string variable
+    mov bx, offset string
+    call get_input
+
+    ; convert string to number
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call str_to_num
+
+    ; compare asnwer and number
+    mov ax, [number]
+    mov bx, [asnwer]
+    cmp ax, bx
+    jnz wrong_answer
+
+correct_asnwer:
+    ; increase score
+    mov ax, score
+    add ax, 1
+    mov score, ax
+
+    mov cl, [string]  ; message size.
+    sub [cursor_y], cl
+    ; Change the color of the user input number to green
+    mov al, [GREENCOLOR]
+    mov [COLOR], al
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+    jmp end_check
+
+wrong_answer:
+    mov cl, [string]  ; message size.
+    sub [cursor_y], cl
+    ; Change the color of the user input number to red
+    mov al, [REDCOLOR]
+    mov [COLOR], al
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+    ; print space
+    mov bx, offset space
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+
+    ; print the correct answer
+    mov al, [YELLOWCOLOR]
+    mov [COLOR], al
+    mov bx, asnwer
+    call num_to_str
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+    jmp end_check
+
+no_asnwer:
+    ; Change the color of the user input number to yellow
+    mov al, [YELLOWCOLOR]
+    mov [COLOR], al
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+end_check:
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+check_answer endp
 
 end main
