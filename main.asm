@@ -305,11 +305,12 @@ print_bar proc
     call print
 
     ; print score
-    ; mov bx, score
-    ; call num_of_digits   ; returns number of digits in bx. bx is argument for print pocedure.
-    ; mov cx, bx  ; message size.
-    ; mov bx, offset score
-    ; call print
+    mov bx, score
+    call num_to_str
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
 
     ; goto next line
     inc [cursor_x]
@@ -401,6 +402,8 @@ while3:
     call num_of_digits
     mov cx, bx
     mov bx, offset string
+    mov [bx], cl
+    inc bx
 
 while4:
     pop dx
