@@ -4,7 +4,6 @@
 .data
 name_msg db 'Enter your name: '
 seed_msg db 'Enter a number for seed: '
-space_msg db ''
 user_msg db 'User: '
 score_msg db 'Score: '
 dash_msg db 80 DUP('-')
@@ -16,6 +15,11 @@ cursor_x db 0
 cursor_y db 0
 string db 64 DUP(?)
 number dw ?
+left dw ?
+right dw ?
+operator db ?
+equal db '='
+space db ' '
 itr dw 0
 time db 0
 WhITECOLOR db 0fh
@@ -47,9 +51,11 @@ main proc
     call clear_screen
 
     call print_bar
-    
-    mov bx, 1234
-    call num_to_str
+
+    inc cursor_x
+    call set_cursor
+
+    call print_question
 
     mov ah, 4ch
     int 21h
@@ -442,20 +448,16 @@ random_number proc
     push dx
     
     mov ax, seed   
-    mov cx, 11021d  ; Multiplier
-    mov dx, 2213d   ; Increment
-    mov bx, 5000h   ; Modulus	
+    mov cx, 25173d  ; Multiplier
+    mov dx, 13849d   ; Increment
+    mov bx, 1000d   ; Modulus	
 
     ; random number using LCG algorithm
     mul cx          ; ax = ax * cx
     add ax, dx      ; ax = ax + dx
     mov dx, 0
-    div bx          ; (remainder is the random number) dx between 0 and 7fff
-    mov seed, dx
-    mov ax, dx
-    mov bx, 9999d	; cause i want random num between 0-9999
-    mov dx, 0	 
-    div bx		    ; cause i want random num between 0-9999
+    div bx          ; (remainder is the random number) dx between 0-9999
+    mov seed, dx    ; update seed
     mov number, dx
 
     pop dx
@@ -464,5 +466,79 @@ random_number proc
     pop ax
     ret
 random_number endp
+
+print_question proc
+    ; [number] is input
+    ; output is in [left], [right], [operator]
+    push ax
+    push bx
+    push cx
+    push dx
+
+    mov cursor_y, 0
+
+    call random_number
+    mov ax, number
+    mov [left], ax
+
+    call random_number
+    mov ax, number
+    mov [right], ax
+
+    mov ax, [seed]
+    mov dx, 0
+    mov cx, 2
+    div cx
+    cmp dx, 0
+    jnz add
+    mov operator, '-'
+    
+    ; left should be greater than right
+    mov ax, [left]
+    cmp ax, [right]
+    jb print_end
+    push ax
+    mov ax, [right]
+    mov [left], ax
+    pop ax
+    mov [right], ax
+    jmp print_end
+
+add:
+    mov operator, '+'
+
+print_end:
+    mov bx, [left]
+    call num_to_str
+    ; print string
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+    mov bx, offset operator
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+
+    mov bx, [right]
+    call num_to_str
+    ; print string
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+    mov bx, offset equal
+    mov ch, 0
+    mov cl, 1  ; message size.
+    call print
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+print_question endp
 
 end main
