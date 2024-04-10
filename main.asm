@@ -33,6 +33,7 @@ COLOR db ?
 TEN dw 10
 clk dw 0
 number_of_hashtags db 0
+errors db 0
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -59,13 +60,24 @@ main proc
     add cursor_x, 2
     call set_cursor
 
+loop:
+    mov al, [cursor_x]
+    cmp al, 25
+    jb no_scroll
+    call scroll_up
+    mov [cursor_x], 24
+    call set_cursor
+no_scroll:
+    mov number_of_hashtags, 0
     call print_question
-
     call evaluate
-
     call check_answer
-
-    inc cursor_x
+    add cursor_x, 2
+    call set_cursor
+    mov al, [WhITECOLOR]
+    mov [COLOR], al
+    cmp errors, 3
+    jb loop
 
     mov ah, 4ch
     int 21h
@@ -96,7 +108,7 @@ scroll_up proc
     mov ah, 06      ; argument for scroll upward
     mov al, 02      ; number of rows that scrolled up
     mov bh, 07      ; color
-    mov ch, 01
+    mov ch, 02
     mov cl, 00
     mov dh, 24
     mov dl, 79
@@ -504,10 +516,10 @@ print_question proc
     jnz add
     mov operator, '-'
 
-    ; left should be greater than right
+    ; in subtraction left should be greater than right
     mov ax, [left]
     cmp ax, [right]
-    jb print_end
+    ja print_end
     push ax
     mov ax, [right]
     mov [left], ax
@@ -773,7 +785,7 @@ correct_asnwer:
     mov dx, 0
     mov bx, 4
     div bx
-    mov score, ax
+    add score, ax
 
     mov cl, [string]  ; message size.
     sub [cursor_y], cl
@@ -816,6 +828,8 @@ wrong_answer:
     mov cl, [string]  ; message size.
     call print
 
+    inc errors
+
     jmp end_check
 
 no_asnwer:
@@ -828,6 +842,8 @@ no_asnwer:
     mov ch, 0
     mov cl, [string]  ; message size.
     call print
+
+    inc errors
 
 end_check:
     pop dx
