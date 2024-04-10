@@ -35,7 +35,7 @@ clk dw 0
 number_of_hashtags db 0
 errors db 0
 update_seed db 0
-slower_time db 0
+ptime db 0
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -474,13 +474,14 @@ random_number proc
     
     ; update seed with the current time each 10 times
     inc update_seed
-    mov ax, 10
-    cmp update_seed, ax
+    mov al, 10
+    cmp update_seed, al
     jne skip_seed_update
     mov update_seed, 0
     mov ah, 2ch     ; get time
     int 21h
-    add seed, dl
+    mov dh, 0
+    add seed, dx
 
 skip_seed_update:
     mov ax, seed   
