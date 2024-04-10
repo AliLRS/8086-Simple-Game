@@ -35,7 +35,7 @@ clk dw 0
 number_of_hashtags db 0
 errors db 0
 update_seed db 0
-ptime db 0
+ptime dw 4
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -633,7 +633,7 @@ check_time2:
     mov ah, 0       ; get number of clock ticks
     int 1ah
     sub dx, clk
-    cmp dx, 4
+    cmp dx, ptime
     jae update_progress_bar
 
             
@@ -699,6 +699,16 @@ backspace2:
     jmp get2
 
 update_progress_bar:
+    ; update ptime. if ptime is 4, change it to 5. if ptime is 5, change it to 4.
+    mov ax, ptime
+    cmp ax, 4
+    jne ptime_5
+    mov ptime, 5
+    jmp continue_progress_bar
+ptime_5:
+    mov ptime, 4
+
+continue_progress_bar:
     mov al, [cursor_y]
     push ax
     mov al, number_of_hashtags
@@ -748,7 +758,8 @@ end_progress_bar:
     mov [cursor_y], al
     dec [cursor_x]
     call set_cursor
-    add [clk], 4
+    mov ax, ptime
+    add [clk], ax
     jmp get2
 
 str_end2:
