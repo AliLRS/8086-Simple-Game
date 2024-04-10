@@ -680,12 +680,12 @@ update_progress_bar:
     call set_cursor
 
     inc number_of_hashtags
-    cmp number_of_hashtags, 27
-    ja yellow_progress_bar
-    cmp number_of_hashtags, 54
-    ja red_progress_bar
     cmp number_of_hashtags, 80
     ja end_progress_bar
+    cmp number_of_hashtags, 54
+    ja red_progress_bar
+    cmp number_of_hashtags, 27
+    ja yellow_progress_bar
     jmp green_progress_bar
 
 green_progress_bar:
@@ -743,7 +743,11 @@ check_answer proc
     ; get input and save to string variable
     mov bx, offset string
     call get_answer
-    cmp itr, 1
+
+    ; check if there is asnwer
+    mov ch, 0       
+    mov cl, [string]  ; message size.
+    cmp cl, 0       ; if there is no asnwer
     je no_asnwer
 
     ; convert string to number
@@ -792,7 +796,7 @@ wrong_answer:
     mov cl, 1  ; message size.
     call print
 
-    ; print the correct answer
+    ; print correct answer
     mov al, [YELLOWCOLOR]
     mov [COLOR], al
     mov bx, asnwer
@@ -805,9 +809,11 @@ wrong_answer:
     jmp end_check
 
 no_asnwer:
-    ; Change the color of the user input number to yellow
+    ; print correct answer
     mov al, [YELLOWCOLOR]
     mov [COLOR], al
+    mov bx, asnwer
+    call num_to_str
     mov bx, offset string + 1
     mov ch, 0
     mov cl, [string]  ; message size.
