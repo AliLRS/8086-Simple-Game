@@ -140,20 +140,6 @@ set_cursor proc
     ret
 set_cursor endp
 
-print_string proc       ;;;;;;;;;; there is better intrupt for this. change it.(int 10h / ah = 13h - write string.)
-    push ax
-    push dx
-
-    mov ah, 09          ; argument for outputing a string
-    ; mov dx, offset username ;;;;;;;;;;;;;;;;;;; replace it with a register
-    mov dx, bx
-    int 21h
-
-    pop dx
-    pop ax
-    ret
-print_string endp
-
 print proc
     push ax
     push bx
@@ -260,26 +246,8 @@ str_end:
     pop dx
     mov bx, dx
     mov [bx], cl    ; store the length of the string
-;   inc cx
-;   add bx, cx
-;   mov [bx], '$'
-    ; pop dx
     ret
 get_input endp
-
-get_str proc
-    push ax
-    push dx
-
-    mov ah, 0ah
-    ; mov dx, bx  ; bx is offset of input string
-    mov dx, offset BUF1
-    int 21h
-
-    pop dx
-    pop ax
-    ret
-get_str endp
 
 get_info proc
     ; print input name message
@@ -290,7 +258,6 @@ get_info proc
     ; get name
     call set_cursor
     mov bx, offset username
-    ; call get_str
     call get_input
     
     ; goto next line
@@ -306,7 +273,6 @@ get_info proc
     ; get seed
     call set_cursor
     mov bx, offset seed_str
-    ; call get_str
     call get_input
 
     ; convert seed string to number
@@ -323,7 +289,6 @@ print_bar proc
     push ax
     push bx
     push cx
-    ; push dx
 
     mov al, [BLUECOLOR]
     mov [COLOR], al
@@ -370,7 +335,6 @@ print_bar proc
     mov cl, 80   ; message size.
     call print
 
-    ; pop dx
     pop cx
     pop bx
     pop ax
@@ -635,8 +599,7 @@ check_time2:
     sub dx, clk
     cmp dx, ptime
     jae update_progress_bar
-
-            
+   
 get2:
     mov al, number_of_hashtags
     mov ah, 0
