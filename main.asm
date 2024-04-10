@@ -65,7 +65,7 @@ loop:
     cmp al, 25
     jb no_scroll
     call scroll_up
-    mov [cursor_x], 24
+    mov [cursor_x], 23
     call set_cursor
 no_scroll:
     mov number_of_hashtags, 0
@@ -108,7 +108,7 @@ scroll_up proc
     mov ah, 06      ; argument for scroll upward
     mov al, 02      ; number of rows that scrolled up
     mov bh, 07      ; color
-    mov ch, 02
+    mov ch, 03
     mov cl, 00
     mov dh, 24
     mov dl, 79
