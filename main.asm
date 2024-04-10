@@ -34,6 +34,8 @@ TEN dw 10
 clk dw 0
 number_of_hashtags db 0
 errors db 0
+update_seed db 0
+slower_time db 0
 
 BUF1 DB 20, ?, 8 DUP(0FFH)
 
@@ -470,10 +472,21 @@ random_number proc
     push cx
     push dx
     
+    ; update seed with the current time each 10 times
+    inc update_seed
+    mov ax, 10
+    cmp update_seed, ax
+    jne skip_seed_update
+    mov update_seed, 0
+    mov ah, 2ch     ; get time
+    int 21h
+    add seed, dl
+
+skip_seed_update:
     mov ax, seed   
     mov cx, 25173d  ; Multiplier
     mov dx, 13849d   ; Increment
-    mov bx, 1000d   ; Modulus	
+    mov bx, 10000d   ; Modulus	
 
     ; random number using LCG algorithm
     mul cx          ; ax = ax * cx
