@@ -56,7 +56,7 @@ main proc
 
     call print_bar
 
-    inc cursor_x
+    add cursor_x, 2
     call set_cursor
 
     call print_question
@@ -64,6 +64,8 @@ main proc
     call evaluate
 
     call check_answer
+
+    inc cursor_x
 
     mov ah, 4ch
     int 21h
@@ -764,8 +766,13 @@ check_answer proc
 
 correct_asnwer:
     ; increase score
-    mov ax, score
-    add ax, 1
+    mov ax, 80
+    mov bl, [number_of_hashtags]
+    mov bh, 0
+    sub ax, bx
+    mov dx, 0
+    mov bx, 4
+    div bx
     mov score, ax
 
     mov cl, [string]  ; message size.
@@ -777,6 +784,9 @@ correct_asnwer:
     mov ch, 0
     mov cl, [string]  ; message size.
     call print
+
+    call update_score
+
     jmp end_check
 
 wrong_answer:
@@ -826,5 +836,50 @@ end_check:
     pop ax
     ret
 check_answer endp
+
+update_score proc
+    push ax
+    push bx
+    push cx
+    push dx
+
+    ; save cursor position
+    mov al, [cursor_y]
+    push ax
+    mov al, [cursor_x]
+    push ax
+    mov cursor_y, 75
+    mov cursor_x, 0
+    call set_cursor
+
+    ; save color
+    mov al, [color]
+    push ax
+    mov al, [BLUECOLOR]
+    mov [COLOR], al
+
+    mov bx, score
+    call num_to_str
+    mov bx, offset string + 1
+    mov ch, 0
+    mov cl, [string]  ; message size.
+    call print
+
+    ; restore color
+    pop ax
+    mov [COLOR], al
+
+    ; restore cursor position
+    pop ax
+    mov cursor_x, al
+    pop ax
+    mov cursor_y, al
+
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+update_score endp
 
 end main
